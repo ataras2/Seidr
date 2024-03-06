@@ -35,6 +35,83 @@ class Star:
     def angular_diameter(self):
         return np.arctan(self.radius / self.distance)
 
+    @staticmethod
+    def create_from_exoplanet_database_row(row, planet_density):
+        """assumes a row from the exoplanet database
+        http://voparis-tap-planeto.obspm.fr/__system__/dc_tables/show/tableinfo/exoplanet.epn_core
+
+        assumes input planet density has astropy units
+        """
+        # check input has astropy units
+        assert isinstance(planet_density, u.Quantity)
+
+        # M_sin_i, semi_major_axis, density
+        planet_args_database_list = [
+            "target_name",
+            "mass_sin_i",
+            "semi_major_axis",
+        ]
+        # the args for the constructor are not the same as the database
+        planet_args_ctor_list = [
+            "name",
+            "M_sin_i",
+            "semi_major_axis",
+        ]
+
+        planet_args_units = [None, u.M_jup, u.au]
+
+        # validate
+        for arg in planet_args_database_list:
+            assert arg in row.keys(), f"missing {arg} in row {row}"
+
+        planet_init_dict = {}
+        for d_arg, p_arg, unit in zip(
+            planet_args_database_list, planet_args_ctor_list, planet_args_units
+        ):
+            value = row[d_arg]
+            if unit:
+                value = value * unit
+            planet_init_dict[p_arg] = value
+
+        planet_init_dict["density"] = planet_density
+
+        # name, distance, effective_temp, radius, mass,
+        star_args_database_list = [
+            "star_name",
+            "star_distance",
+            "star_teff",
+            "star_radius",
+            "star_mass",
+        ]
+
+        star_args_ctor_list = [
+            "name",
+            "distance",
+            "effective_temp",
+            "radius",
+            "mass",
+        ]
+
+        star_args_units = [None, u.pc, u.K, u.R_sun, u.M_sun]
+
+        # validate
+        for arg in star_args_database_list:
+            assert arg in row.keys(), f"missing {arg} in row {row}"
+
+        star_init_dict = {}
+        for d_arg, s_arg, unit in zip(
+            star_args_database_list, star_args_ctor_list, star_args_units
+        ):
+            value = row[d_arg]
+            if unit:
+                value = value * unit
+            star_init_dict[s_arg] = value
+
+        # create star
+        star = Star(**star_init_dict, planets=[Planet(**planet_init_dict)])
+
+        return star
+
     @property
     def planet_angular_separation(self):
         separations = []
@@ -103,41 +180,41 @@ class Planet:
         return (3 * self.volume_lower_bound / (4 * np.pi)) ** (1 / 3)
 
 
-p = Planet(
-    "GJ 86 b",
-    M_sin_i=4.27 * u.M_jup,
-    semi_major_axis=0.1177 * u.au,
-    density=1.64 * u.g / u.cm**3,
-)
+if __name__ == "__main__":
+    p = Planet(
+        "GJ 86 b",
+        M_sin_i=4.27 * u.M_jup,
+        semi_major_axis=0.1177 * u.au,
+        density=1.64 * u.g / u.cm**3,
+    )
 
-s = Star(
-    "GJ 86",
-    distance=10.9 * u.pc,
-    effective_temp=5_350 * u.K,
-    radius=0.855 * u.R_sun,
-    mass=0.8 * u.M_sun,
-    planets=[p],
-)
+    s = Star(
+        "GJ 86",
+        distance=10.9 * u.pc,
+        effective_temp=5_350 * u.K,
+        radius=0.855 * u.R_sun,
+        mass=0.8 * u.M_sun,
+        planets=[p],
+    )
 
-earth = Planet(
-    "Earth",
-    M_sin_i=1 * u.M_earth,
-    semi_major_axis=1 * u.au,
-    density=5.51 * u.g / u.cm**3,
-)
+    earth = Planet(
+        "Earth",
+        M_sin_i=1 * u.M_earth,
+        semi_major_axis=1 * u.au,
+        density=5.51 * u.g / u.cm**3,
+    )
 
-sun = Star(
-    "Sun",
-    distance=0 * u.pc,
-    effective_temp=5_780 * u.K,
-    radius=1.0 * u.R_sun,
-    mass=1.0 * u.M_sun,
-    planets=[earth],
-)
+    sun = Star(
+        "Sun",
+        distance=0 * u.pc,
+        effective_temp=5_780 * u.K,
+        radius=1.0 * u.R_sun,
+        mass=1.0 * u.M_sun,
+        planets=[earth],
+    )
 
+    print(s.angular_diameter().to(u.mas))
+    print([x.to(u.mas) for x in s.planet_angular_separation])
 
-print(s.angular_diameter().to(u.mas))
-print([x.to(u.mas) for x in s.planet_angular_separation])
-
-print(s.planet_contrast(1.630 * u.micron))
-print(s.planet_contrast(3.450 * u.micron))
+    print(s.planet_contrast(1.630 * u.micron))
+    print(s.planet_contrast(3.450 * u.micron))
