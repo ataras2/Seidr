@@ -10,4 +10,8 @@ dist
 *.png
 *.pdf
 
+*.ipynb
+*.npy
+*.npz
+
 build
