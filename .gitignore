@@ -1,0 +1,13 @@
+.vscode
+.pytest_cache
+
+*.pyc
+*.egg
+*.egg-info
+dist
+.pypirc
+
+*.png
+*.pdf
+
+build
