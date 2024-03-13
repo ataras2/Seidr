@@ -158,7 +158,6 @@ class Star:
 
     def planet_contrast_reflected(self, wavelength, albedo, phase_angle_factor):
         contrasts = []
-        temps = self.planet_eq_temps(albedo=albedo)
         radii = [planet.radius_lower_bound for planet in self.planets]
         for p_idx, planet in enumerate(self.planets):
             planet_area = np.pi * planet.radius_lower_bound**2
@@ -174,11 +173,9 @@ class Star:
                 * planet_area
                 * phase_angle_factor
                 / light_shell_area
-            )
+            )  # theres also a term that cancels to do with total stellar power?
 
-            contrast_ratio = (planet_energy_density * np.pi * radii[p_idx] ** 2) / (
-                stellar_energy_density * np.pi * self.radius**2
-            )
+            contrast_ratio = (planet_energy_density) / (stellar_energy_density)
 
             contrasts.append(np.log10(contrast_ratio.to("")))
         return contrasts
@@ -188,7 +185,10 @@ class Star:
         reflected_contrast = self.planet_contrast_reflected(
             wavelength, albedo, phase_angle_factor
         )
-        return [np.log10(10**tc + 10**rc) for tc, rc in zip(thermal_contrast, reflected_contrast)]
+        return [
+            np.log10(10**tc + 10**rc)
+            for tc, rc in zip(thermal_contrast, reflected_contrast)
+        ]
 
 
 class Planet:
