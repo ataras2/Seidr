@@ -48,7 +48,7 @@ class Star:
         # M_sin_i, semi_major_axis, density
         planet_args_database_list = [
             "target_name",
-            "mass_sin_i",
+            "mass",
             "semi_major_axis",
         ]
         # the args for the constructor are not the same as the database
@@ -152,7 +152,7 @@ class Star:
                 star_energy_density * np.pi * self.radius**2
             )
 
-            contrast = np.log10(contrast_ratio.to(""))
+            contrast = contrast_ratio.to("").value
             contrasts.append(contrast)
         return contrasts
 

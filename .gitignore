@@ -14,4 +14,10 @@ dist
 *.npy
 *.npz
 
+*.fits 
+*.ecsv
+
+*.txt
+*.gif
+
 build
