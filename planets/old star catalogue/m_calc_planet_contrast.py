@@ -123,8 +123,7 @@ class Star:
     def bolometric_luminosity(self):
         return 4 * np.pi * self.radius**2 * c.sigma_sb * self.effective_temp**4
 
-    @property
-    def planet_eq_temps(self):
+    def planet_eq_temps(self, albedo=0.0):
         """
         Assumes a thermal equilibrium with the star, such that the total incident flux is equal to the total emitted flux
         """
@@ -132,15 +131,16 @@ class Star:
         for planet in self.planets:
             T_eff = (
                 self.bolometric_luminosity
+                * (1 - albedo)
                 / (16 * np.pi * c.sigma_sb * planet.semi_major_axis**2)
             ) ** (1 / 4)
 
             eq_temps.append(T_eff)
         return eq_temps
 
-    def planet_contrast(self, wavelength):
+    def planet_contrast_thermal(self, wavelength, albedo=0.0):
         contrasts = []
-        temps = self.planet_eq_temps
+        temps = self.planet_eq_temps(albedo=albedo)
         radii = [planet.radius_lower_bound for planet in self.planets]
         for p_idx, planet in enumerate(self.planets):
             star_energy_density = spectral_energy_density(
@@ -155,6 +155,40 @@ class Star:
             contrast = contrast_ratio.to("").value
             contrasts.append(contrast)
         return contrasts
+
+    def planet_contrast_reflected(self, wavelength, albedo, phase_angle_factor):
+        contrasts = []
+        radii = [planet.radius_lower_bound for planet in self.planets]
+        for p_idx, planet in enumerate(self.planets):
+            planet_area = np.pi * planet.radius_lower_bound**2
+            light_shell_area = 4 * np.pi * planet.semi_major_axis**2
+
+            stellar_energy_density = spectral_energy_density(
+                wavelength, self.effective_temp
+            )
+
+            planet_energy_density = (
+                stellar_energy_density
+                * albedo
+                * planet_area
+                * phase_angle_factor
+                / light_shell_area
+            )  # theres also a term that cancels to do with total stellar power?
+
+            contrast_ratio = (planet_energy_density) / (stellar_energy_density)
+
+            contrasts.append(np.log10(contrast_ratio.to("")))
+        return contrasts
+
+    def planet_total_contrast(self, wavelength, albedo, phase_angle_factor):
+        thermal_contrast = self.planet_contrast_thermal(wavelength)
+        reflected_contrast = self.planet_contrast_reflected(
+            wavelength, albedo, phase_angle_factor
+        )
+        return [
+            np.log10(10**tc + 10**rc)
+            for tc, rc in zip(thermal_contrast, reflected_contrast)
+        ]
 
 
 class Planet:
@@ -181,19 +215,34 @@ class Planet:
 
 
 if __name__ == "__main__":
+    # p = Planet(
+    #     "GJ 86 b",
+    #     M_sin_i=4.27 * u.M_jup,
+    #     semi_major_axis=0.1177 * u.au,
+    #     density=1.64 * u.g / u.cm**3,
+    # )
+
+    # s = Star(
+    #     "GJ 86",
+    #     distance=10.9 * u.pc,
+    #     effective_temp=5_350 * u.K,
+    #     radius=0.855 * u.R_sun,
+    #     mass=0.8 * u.M_sun,
+    #     planets=[p],
+    # )
     p = Planet(
-        "GJ 86 b",
-        M_sin_i=4.27 * u.M_jup,
-        semi_major_axis=0.1177 * u.au,
+        "HD 77946 b",
+        M_sin_i=0.02637 * u.M_jup,
+        semi_major_axis=0.072 * u.au,
         density=1.64 * u.g / u.cm**3,
     )
 
     s = Star(
-        "GJ 86",
-        distance=10.9 * u.pc,
-        effective_temp=5_350 * u.K,
-        radius=0.855 * u.R_sun,
-        mass=0.8 * u.M_sun,
+        "HD 77946",
+        distance=99 * u.pc,
+        effective_temp=6_046 * u.K,
+        radius=1.31 * u.R_sun,
+        mass=1.17 * u.M_sun,
         planets=[p],
     )
 
@@ -213,8 +262,12 @@ if __name__ == "__main__":
         planets=[earth],
     )
 
-    print(s.angular_diameter().to(u.mas))
     print([x.to(u.mas) for x in s.planet_angular_separation])
 
-    print(s.planet_contrast(1.630 * u.micron))
-    print(s.planet_contrast(3.450 * u.micron))
+    print(s.planet_contrast_thermal(1.630 * u.micron))
+    print(s.planet_contrast_thermal(3.450 * u.micron))
+    print(s.planet_contrast_reflected(1.630 * u.micron, 0.1, 0.5))
+    print(s.planet_contrast_reflected(3.450 * u.micron, 0.1, 0.5))
+
+    print(s.planet_total_contrast(1.630 * u.micron, 0.1, 0.5))
+    print(s.planet_total_contrast(3.450 * u.micron, 0.1, 0.5))
