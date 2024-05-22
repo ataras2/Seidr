@@ -35,7 +35,9 @@ layers = [("aperture", dl.layers.BasisOptic(basis, circle, coeffs, normalise=Tru
 input_f_number = 1.25
 focal_length = input_f_number * diameter
 psf_npixels = 256
-psf_pixel_scale = 20 / psf_npixels  # in microns
+psf_pixel_scale = (
+    60 / psf_npixels
+)  # in microns # TODO: check how this matches the LP mode scale
 
 # # Construct Optics
 optics = dl.CartesianOpticalSystem(
@@ -47,7 +49,8 @@ optics = dl.CartesianOpticalSystem(
 #     wf_npixels, diameter, layers, psf_npixels, psf_pixel_scale
 # )
 # Create a point source
-source = dl.PointSource(flux=1e5, wavelengths=[1.6e-6])
+# source = dl.PointSource(flux=1e5, wavelengths=[1.6e-6])
+source = dl.PointSource(flux=1e5, wavelengths=np.linspace(1.5e-6, 1.6e-6, 10))
 
 # source = dl.BinarySource(
 #     wavelengths=[1.6e-6],
@@ -87,7 +90,15 @@ plt.colorbar(label="um")
 
 plt.subplot(1, 3, 2)
 plt.title("psf amplitude")
-plt.imshow(np.abs(ouput_wf_complex))
+plt.imshow(
+    np.abs(ouput_wf_complex),
+    extent=[
+        -psf_npixels * psf_pixel_scale / 2,
+        psf_npixels * psf_pixel_scale / 2,
+        -psf_npixels * psf_pixel_scale / 2,
+        psf_npixels * psf_pixel_scale / 2,
+    ],
+)
 plt.colorbar(label="Photons")
 
 
@@ -120,8 +131,24 @@ lf = lanternfiber.lanternfiber(
 lf.find_fiber_modes()
 lf.make_fiber_modes(npix=psf_npixels // 2, show_plots=False, max_r=max_r)
 
+# n_modes_to_plot = 5
+# for i in range(n_modes_to_plot):
+#     plt.figure(100 + i)
+#     lf.plot_fiber_modes(i, fignum=100 + i)
+# plt.show()
+
+tip_tilt_mode_indicies = np.arange(len(lf.allmodes_l))[np.array(lf.allmodes_l) == 1]
+
+interesting_mode_indicies = np.concatenate(
+    [np.array([0.0]), tip_tilt_mode_indicies]
+).astype(int)
+
+plt.figure()
 lf.calc_injection_multi(
-    ouput_wf_complex, mode_field_numbers=list(range(n_modes)), show_plots=True
+    ouput_wf_complex,
+    mode_field_numbers=list(range(len(lf.allmodes_b))),
+    show_plots=True,
+    fignum=2,
 )
 
 
@@ -140,7 +167,7 @@ def compute_LP_overlaps(optics, zernikies):
     ouput_wf_complex = prop_fibre_input_field(optics, zernikies)
     integral = lf.calc_injection_multi(
         input_field=ouput_wf_complex,
-        mode_field_numbers=[0, 1, 2],
+        mode_field_numbers=interesting_mode_indicies,
         show_plots=False,
     )
     return integral[1]
@@ -158,7 +185,22 @@ overlaps = jax.vmap(
     lambda tilt: compute_LP_overlaps(optics, np.array([0.0, tilt, 0.0]))
 )(tilts)
 
+print(overlaps.max(axis=0))
+
 plt.figure()
 plt.plot(tilts, overlaps)
-plt.legend(["LP1", "LP2", "LP3"])
+plt.plot(tilts, np.sum(overlaps, axis=1))
+plt.legend(["LP0,0", "LP1,1", "LP1,-1", "Total"])
+
+
+overlaps = jax.vmap(
+    lambda tilt: compute_LP_overlaps(optics, np.array([0.0, 0.0, tilt]))
+)(tilts)
+
+print(overlaps.max(axis=0))
+
+plt.figure()
+plt.plot(tilts, overlaps)
+plt.plot(tilts, np.sum(overlaps, axis=1))
+plt.legend(["LP0,0", "LP1,1", "LP1,-1", "Total"])
 plt.show()
