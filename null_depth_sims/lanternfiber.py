@@ -5,7 +5,7 @@ This class uses
 ofiber https://ofiber.readthedocs.io
 polarTransform https://polartransform.readthedocs.io/en/latest/getting-started.html
 """
-import numpy as np
+import jax.numpy as np
 import ofiber
 import matplotlib.pyplot as plt
 import polarTransform
@@ -468,7 +468,8 @@ class lanternfiber:
         """
         fld_ampl = np.abs(raw_ampl)
         fld_phase = np.zeros_like(raw_ampl)
-        fld_phase[raw_ampl < 0] = np.pi
+        # fld_phase[raw_ampl < 0] = np.pi
+        fld_phase = fld_phase.at[raw_ampl < 0].set(np.pi)
         complex_psf = fld_ampl * np.exp(1j * fld_phase)
         return complex_psf
 
