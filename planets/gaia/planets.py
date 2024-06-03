@@ -100,7 +100,35 @@ def compute_angular_sep(
     return np.arctan((semi_major_axis) / (distance_to_star))
 
 
-def period(
+def period_to_axis(
+    period,
+    star_mass,
+    period_units=u.day,
+    star_mass_units=u.M_sun,
+):
+    """
+    Find the semi-major axis of a planet given its period and the mass of the star
+
+    Parameters
+    ----------
+    period : float or Quantity
+        The period of the planet
+    star_mass : float or Quantity
+
+    Returns
+    -------
+    Quantity
+        The semi-major axis of the planet
+    """
+    if not has_units(period):
+        period = period * period_units
+    if not has_units(star_mass):
+        star_mass = star_mass * star_mass_units
+
+    return (const.G * star_mass * period**2 / (4 * np.pi**2)) ** (1 / 3)
+
+
+def axis_to_period(
     semi_major_axis,
     star_mass,
     semi_major_axis_units=u.AU,
