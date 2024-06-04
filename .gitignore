@@ -16,8 +16,10 @@ dist
 
 *.fits 
 *.ecsv
+*.csv
 
 *.txt
 *.gif
+
 
 build
