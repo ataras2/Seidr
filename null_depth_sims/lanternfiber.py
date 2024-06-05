@@ -122,12 +122,16 @@ class lanternfiber:
         # print('Total number of LP modes found: %d' % nLPmodes)
         l = np.asarray(allmodes_l)
         total_unique_modes = len(np.where(l == 0)[0]) + len(np.where(l > 0)[0])*2
-        if verbose:
-            print('Total number of unique modes found: %d' % total_unique_modes)
         self.allmodes_b = allmodes_b
         self.allmodes_l = allmodes_l
         self.allmodes_m = allmodes_m
         self.nLPmodes = nLPmodes
+        if verbose:
+            print('Total number of unique modes found: %d' % total_unique_modes)
+            print(f"len(allmodes_b): {len(allmodes_b)}")
+            print(f"len(allmodes_l): {len(allmodes_l)}")
+            print(f"len(allmodes_m): {len(allmodes_m)}")
+            print(f"nLPmodes: {nLPmodes}")
 
         # ADDED - HACK?
         self.nmodes = total_unique_modes
