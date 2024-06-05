@@ -8,6 +8,7 @@ import dLux.utils as dlu
 # Plotting/visualisation
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
+import lanternfiber
 
 plt.rcParams["image.cmap"] = "inferno"
 plt.rcParams["font.family"] = "serif"
@@ -25,19 +26,32 @@ circle = dlu.circle(coords, diameter / 2)
 zernike_indexes = np.arange(1, 4)
 # coeffs = np.zeros(zernike_indexes.shape)
 coeffs = 300e-9 * jr.normal(jr.PRNGKey(1), zernike_indexes.shape)
-coeffs = 300e-9 * np.array([0.0, 1.0, 0.0])
+coeffs = 50e-9 * np.array([0.0, 1.0, 0.0])
 coords = dlu.pixel_coords(wf_npixels, diameter)
 basis = dlu.zernike_basis(zernike_indexes, coords, diameter)
 
 layers = [("aperture", dl.layers.BasisOptic(basis, circle, coeffs, normalise=True))]
 
+# PL params
+# n_core = 1.44
+# n_cladding = 1.4345
+n_core = 1.44
+n_cladding = 1.40
+wavelength = 1.65  # microns
+core_radius = 4.0  # microns
+max_r = 2
+# n_modes = 19
+
+max_l = 10
+show_plots = True
+
 # psf params
 input_f_number = 1.25
+# input_f_number = 3
 focal_length = input_f_number * diameter
 psf_npixels = 256
-psf_pixel_scale = (
-    60 / psf_npixels
-)  # in microns # TODO: check how this matches the LP mode scale
+psf_pixel_scale = core_radius * max_r * 2 / psf_npixels
+
 
 # # Construct Optics
 optics = dl.CartesianOpticalSystem(
@@ -49,8 +63,8 @@ optics = dl.CartesianOpticalSystem(
 #     wf_npixels, diameter, layers, psf_npixels, psf_pixel_scale
 # )
 # Create a point source
-# source = dl.PointSource(flux=1e5, wavelengths=[1.6e-6])
-source = dl.PointSource(flux=1e5, wavelengths=np.linspace(1.5e-6, 1.6e-6, 10))
+source = dl.PointSource(flux=1e5, wavelengths=[1.65e-6])
+# source = dl.PointSource(flux=1e5, wavelengths=np.linspace(1.5e-6, 1.6e-6, 10))
 
 # source = dl.BinarySource(
 #     wavelengths=[1.6e-6],
@@ -108,48 +122,42 @@ plt.imshow(np.angle(ouput_wf_complex), cmap=circular_cmap)
 plt.colorbar(label="Photons")
 
 
-import lanternfiber
-
-n_core = 1.44
-n_cladding = 1.4345
-wavelength = 1.5  # microns
-core_radius = 32.8 / 2  # microns
-max_r = 2
-n_modes = 19
-
-max_l = 10
-show_plots = True
-
 lf = lanternfiber.lanternfiber(
     n_core=n_core,
     n_cladding=n_cladding,
     core_radius=core_radius,
     wavelength=wavelength,
-    nmodes=n_modes,
+    # nmodes=n_modes,
 )
 
 lf.find_fiber_modes()
 lf.make_fiber_modes(npix=psf_npixels // 2, show_plots=False, max_r=max_r)
+print(f"len self.allmodefields_rsoftorder {len(lf.allmodefields_rsoftorder)}")
 
-# n_modes_to_plot = 5
-# for i in range(n_modes_to_plot):
-#     plt.figure(100 + i)
-#     lf.plot_fiber_modes(i, fignum=100 + i)
+n_modes_to_plot = 2
+for i in range(n_modes_to_plot):
+    plt.figure(100 + i)
+    lf.plot_fiber_modes(i, fignum=100 + i)
 # plt.show()
 
 tip_tilt_mode_indicies = np.arange(len(lf.allmodes_l))[np.array(lf.allmodes_l) == 1]
 
-interesting_mode_indicies = np.concatenate(
-    [np.array([0.0]), tip_tilt_mode_indicies]
-).astype(int)
+# interesting_mode_indicies = np.concatenate(
+#     [np.array([0.0]), tip_tilt_mode_indicies]
+# ).astype(int)
+
+interesting_mode_indicies = list(range(len(lf.allmodefields_rsoftorder)))
+
+print(f"Probing modes {interesting_mode_indicies}")
 
 plt.figure()
-lf.calc_injection_multi(
-    ouput_wf_complex,
-    mode_field_numbers=list(range(len(lf.allmodes_b))),
-    show_plots=True,
-    fignum=2,
-)
+# lf.calc_injection_multi(
+#     ouput_wf_complex,
+#     mode_field_numbers=list(range(len(lf.allmodes_b))),
+#     show_plots=True,
+#     fignum=50,
+# )
+# plt.show()
 
 
 def prop_fibre_input_field(optics, zernikies):
@@ -188,9 +196,14 @@ overlaps = jax.vmap(
 print(overlaps.max(axis=0))
 
 plt.figure()
-plt.plot(tilts, overlaps)
-plt.plot(tilts, np.sum(overlaps, axis=1))
-plt.legend(["LP0,0", "LP1,1", "LP1,-1", "Total"])
+for i in interesting_mode_indicies:
+    plt.plot(
+        tilts,
+        overlaps[:, i],
+        # label=f"LP{lf.allmodes_l[interesting_mode_indicies[i]]},{lf.allmodes_m[interesting_mode_indicies[i]]}",
+    )
+plt.plot(tilts, np.sum(overlaps, axis=1), linestyle="--", label="Total")
+plt.legend()
 
 
 overlaps = jax.vmap(
@@ -200,7 +213,12 @@ overlaps = jax.vmap(
 print(overlaps.max(axis=0))
 
 plt.figure()
-plt.plot(tilts, overlaps)
-plt.plot(tilts, np.sum(overlaps, axis=1))
-plt.legend(["LP0,0", "LP1,1", "LP1,-1", "Total"])
+for i in range(len(interesting_mode_indicies)):
+    plt.plot(
+        tilts,
+        overlaps[:, interesting_mode_indicies[i]],
+        # label=f"LP{lf.allmodes_l[interesting_mode_indicies[i]]},{lf.allmodes_m[interesting_mode_indicies[i]]}",
+    )
+plt.plot(tilts, np.sum(overlaps, axis=1), linestyle="--", label="Total")
+plt.legend()
 plt.show()
