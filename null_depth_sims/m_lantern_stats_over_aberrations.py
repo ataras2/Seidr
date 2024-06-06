@@ -28,16 +28,16 @@ def read_data(path, validate_lf=None, max_r=None):
     return data
 
 
-pth = "./aberrated_psfs_higher_f.npz"
+pth = "./aberrated_psfs_many_zern.npz"
 
 
 # PL params
-# n_core = 1.44
-# n_cladding = 1.4345
 n_core = 1.44
-n_cladding = n_core - 0.04
+n_cladding = 1.4345
+# n_core = 1.44
+# n_cladding = n_core - 0.04
 wavelength = 1.65  # microns
-core_radius = 5.0  # microns
+core_radius = 22.5  # microns
 max_r = 2
 
 
@@ -77,7 +77,7 @@ plt.figure()
 plt.hist(
     injection_vals,
     alpha=0.5,
-    label=f"Aberrated injection (rms = {data['zernike_rms']})",
+    label=f"Aberrated injection (tt rms = {data['tip_tilt_rms']})",
 )
 plt.axvline(no_ab_inj, c="k", linestyle="--", label="Non-aberrated injection")
 plt.xlabel("Injection efficiency")

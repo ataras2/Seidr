@@ -18,7 +18,7 @@ plt.rcParams["font.family"] = "serif"
 plt.rcParams["image.origin"] = "lower"
 plt.rcParams["figure.dpi"] = 72
 
-fname = "./aberrated_psfs.npz"
+fname = "./aberrated_psfs_many_zern.npz"
 
 
 # Wavefront properties
@@ -30,16 +30,25 @@ n_runs = 1_000
 wavelength = 1.65e-6
 
 # psf params
-input_f_number = 1.25
+# input_f_number = 1.25
+input_f_number = 12.5
 # input_f_number = 3
 focal_length = input_f_number * diameter
 psf_npixels = 256
-psf_pixel_scale = 2 * 2 * 5 / psf_npixels
+psf_pixel_scale = 2 * 2 * 22.5 / psf_npixels
 
 
 # aberration params:
-n_zernikes = 3  # including piston
-zernike_rms = 50e-9
+# n_zernikes = 3  # including piston
+# tip_tilt_rms = (
+#     100e-9 / 4 / np.sqrt(2)
+# )  # /4 because of dlux things, /sqrt(2) to acocunt for both tip/tilt
+
+n_zernikes = 100  # including piston
+tip_tilt_rms = (
+    50e-9 / 4 / np.sqrt(2)
+)  # /4 because of dlux things, /sqrt(2) to acocunt for both tip/tilt
+rest_rms = 5e-9 / 4
 
 
 coords = dlu.pixel_coords(wf_npixels, diameter)
@@ -49,7 +58,7 @@ circle = dlu.circle(coords, diameter / 2)
 zernike_indexes = np.arange(1, n_zernikes + 1)
 coeffs = np.zeros(zernike_indexes.shape)
 # coeffs = 300e-9 * jr.normal(jr.PRNGKey(1), zernike_indexes.shape)
-# coeffs = 50e-9 * np.array([0.0, 1.0, 0.0])
+# coeffs = tip_tilt_rms * np.array([0.0, 1.0, 0.0])
 coords = dlu.pixel_coords(wf_npixels, diameter)
 basis = dlu.zernike_basis(zernike_indexes, coords, diameter)
 
@@ -113,7 +122,16 @@ plt.imshow(np.angle(ouput_wf_complex), cmap=circular_cmap)
 plt.colorbar(label="Photons")
 plt.show()
 
-zernike_coeffs = zernike_rms * jr.normal(jr.PRNGKey(1), (n_runs, n_zernikes))
+# zernike_coeffs = zernike_rms * jr.normal(jr.PRNGKey(1), (n_runs, n_zernikes))
+
+zernike_coeffs = np.concatenate(
+    [
+        np.zeros((n_runs, 1)),
+        tip_tilt_rms * jr.normal(jr.PRNGKey(1), (n_runs, 2)),
+        rest_rms * jr.normal(jr.PRNGKey(1), (n_runs, n_zernikes - 3)),
+    ],
+    axis=1,
+)
 
 print("Making PSFs...", end="")
 outputs = jax.vmap(prop_fibre_input_field, in_axes=(None, 0))(optics, zernike_coeffs)
@@ -127,7 +145,8 @@ np.savez(
     psf_pixel_scale=psf_pixel_scale,
     psf_npixels=psf_npixels,
     input_f_number=input_f_number,
-    zernike_rms=zernike_rms,
+    tip_tilt_rms=tip_tilt_rms,
+    rest_rms=rest_rms,
     n_zernikes=n_zernikes,
     non_aberrated=ouput_wf_complex,
 )

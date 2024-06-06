@@ -24,7 +24,7 @@ wavelength = 1.65e-6
 
 # psf params
 # input_f_number = 1.25
-input_f_number = 3
+input_f_number = 12.5
 focal_length = input_f_number * diameter
 psf_npixels = 256
 psf_pixel_scale = 2 * 2 * 10 / psf_npixels
@@ -96,8 +96,8 @@ def compute_values(core_radius, delta_n, optics):
     return n_modes, total_injection, injections[0]
 
 
-core_radii = np.linspace(3, 20, 31)
-del_n = np.linspace(1.44 - 1.4345, 1.44 - 1.40, 30)
+core_radii = np.linspace(10, 35, 10)
+del_n = np.linspace(1.44 - 1.4395, 1.44 - 1.43, 11)
 
 rr, dndn = np.meshgrid(core_radii, del_n)
 
