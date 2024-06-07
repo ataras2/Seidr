@@ -57,8 +57,16 @@ lf.make_fiber_modes(npix=data["psf_npixels"] // 2, show_plots=False, max_r=max_r
 
 wavefronts = data["outputs"]
 
+wavefronts = (
+    wavefronts / (np.abs(wavefronts) ** 2).sum(axis=(1, 2), keepdims=True) ** 0.5
+)
+
 wf = wavefronts[0]
 wf = data["non_aberrated"]
+
+non_aberrated = (
+    data["non_aberrated"] / (np.abs(data["non_aberrated"]) ** 2).sum() ** 0.5
+)
 
 
 def get_total_injection(wf, lf):
@@ -69,7 +77,7 @@ def get_total_injection(wf, lf):
     )[0]
 
 
-no_ab_inj = get_total_injection(data["non_aberrated"], lf)
+no_ab_inj = get_total_injection(non_aberrated, lf)
 
 injection_vals = jax.vmap(get_total_injection, in_axes=(0, None))(wavefronts, lf)
 
@@ -90,10 +98,11 @@ def get_injections(wf, lf):
         input_field=wf,
         mode_field_numbers=list(range(len(lf.allmodefields_rsoftorder))),
         show_plots=False,
+        return_abspower=True,
     )[1]
 
 
-no_ab_injs = get_injections(data["non_aberrated"], lf)
+no_ab_injs = get_injections(non_aberrated, lf)
 injections = jax.vmap(get_injections, in_axes=(0, None))(wavefronts, lf)
 
 

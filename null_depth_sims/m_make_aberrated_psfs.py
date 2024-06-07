@@ -70,7 +70,7 @@ optics = dl.CartesianOpticalSystem(
     wf_npixels, diameter, layers, focal_length, psf_npixels, psf_pixel_scale
 )
 
-source = dl.PointSource(flux=1e5, wavelengths=[wavelength])
+source = dl.PointSource(flux=1.0, wavelengths=[wavelength])
 
 
 def prop_fibre_input_field(optics, zernikies):
