@@ -19,7 +19,10 @@ wavel = 1.6e-6  # wavelength
 
 # suppose UTs
 telescope_diameter = 8.2  # meters
-telescope_area = np.pi * (telescope_diameter / 2) ** 2  # m^2
+secondary_diameter = 1.2  # meters
+telescope_area = np.pi * (
+    (telescope_diameter / 2) ** 2 - (secondary_diameter / 2) ** 2
+)  # m^2
 n_telescopes = 4
 magnitude = 3.55  # 22
 # magnitude = 12 #Pa beta
@@ -33,12 +36,12 @@ wavelength = 1.6  # microns
 bandwidth = 0.3  # 0.05 # microns #TODO - Treat chromaticity properly (photonic)
 
 
-system_throughput = 0.1
+system_throughput = 0.039
 
 
 read_noise = 0.5  # e-
 QE = 0.8
-int_time = 3600 * 10  # 3600 # seconds
+int_time = 3600 * 1  # 3600 # seconds
 
 # default companion parameters:
 # dec0 = kn.dec_deg(-64, 42, 45)  # target declination
@@ -73,18 +76,51 @@ kernel_index = 0
 average_null_depth = np.mean(on_axis[nuller_output_index, hr_index, :])
 print(f"Average null depth: {average_null_depth:.3e}")
 
-star_photons = (
-    star_flux * system_throughput * telescope_area * bandwidth * int_time * n_telescopes
+star_photons_per_scope = (
+    star_flux * system_throughput * telescope_area * bandwidth * int_time * QE
 )
 
 # test_binary is the signal from the companion, in units of "fraction of telescope flux"
 # TODO check this is right
-companion_photons = star_photons * test_binary[nuller_output_index, hr_index]
-raw_comp_snr = companion_photons / np.sqrt(star_photons)
-print("No-nulling S/N ratio for companion: %f" % raw_comp_snr)
+companion_photons = star_photons_per_scope * test_binary
+raw_comp_snr = companion_photons / np.sqrt(star_photons_per_scope * 2)
 
-nulled_comp_snr = companion_photons / np.sqrt(star_photons * average_null_depth)
-print("Nulled S/N ratio for companion: %f" % nulled_comp_snr)
+
+nulled_comp_snr = companion_photons / np.sqrt(
+    star_photons_per_scope * 2 * average_null_depth
+)
+
+plt.figure(figsize=(12, 6))
+plt.subplot(1, 2, 1)
+plt.imshow(raw_comp_snr)
+plt.colorbar()
+plt.title("Raw SNR")
+plt.ylabel("Nulled output index")
+plt.xlabel("Hour angle index")
+
+plt.subplot(1, 2, 2)
+plt.imshow(nulled_comp_snr)
+plt.colorbar()
+plt.title("Nulled SNR")
+plt.ylabel("Nulled output index")
+plt.xlabel("Hour angle index")
+
+
+plt.figure()
+fig, ax = plt.subplots()
+for ii in range(test_binary.shape[0]):
+    ax.plot(
+        myk.har * 12/np.pi, test_binary[ii], label="output #%d" % (ii+1,))
+ax.legend()
+ax.set_xlabel("Hour angle")
+ax.set_ylabel("Nuller output (fraction of telescope flux)")
+mytitle = myk.combiner
+mytitle += r" (%.1e companion @ (%+.1f, %+.1f))" % (con, dra, ddec)
+ax.set_title(mytitle)
+fig.set_tight_layout(True)
+
+
+plt.show()
 
 exit()
 
