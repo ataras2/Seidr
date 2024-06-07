@@ -392,7 +392,7 @@ class Nuller():
 
     # ==================================================================
     def mc_perturbed_signal_companion(self, dra=4.8, ddec=1.8, con=1e-2,
-                                      rms=50, nmc=100):
+                                      rms=50, nmc=100, return_split=False):
         ''' --------------------------------------------------------
         Produces a recording of "experimental" astrophysical null
         induced by a unique off-axis companion in the presence of
@@ -405,6 +405,7 @@ class Nuller():
         - con: companion contrast
         - rms: the amount of resitual piston (in nanometers)
         - nmc: number of MC iterations per epoch
+        - return_split: if True, returns the on-axis and off-axis contributions as a tuple
         -------------------------------------------------------- '''
 
         _ = self.projected_array(ha=self.har, dec=self._tdec)  # updates _papc
@@ -423,6 +424,9 @@ class Nuller():
         output = np.abs(np.tensordot(self.MM, ef_on, axes=1))**2 + \
             con * np.abs(np.tensordot(self.MM, ef_off, axes=1))**2
 
+        if return_split:
+            return output, np.abs(np.tensordot(self.MM, ef_on, axes=1))**2, \
+                con * np.abs(np.tensordot(self.MM, ef_off, axes=1))**2
         return output
 
     # ==================================================================

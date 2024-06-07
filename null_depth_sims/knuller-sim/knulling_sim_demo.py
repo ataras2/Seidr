@@ -26,12 +26,12 @@ wavel = 1.6e-6  # wavelength
 
 
 # Tau Boötis b:
-# dec0 = kn.dec_deg(17, 27, 24.810)  # target declination
-# dra, ddec, con = 3 / np.sqrt(2), 3 / np.sqrt(2), 10 ** (-3.632)  # test companion!
+dec0 = kn.dec_deg(17, 27, 24.810)  # target declination
+dra, ddec, con = 3 / np.sqrt(2), 3 / np.sqrt(2), 10 ** (-3.632)  # test companion!
 
 # HD 179949 b:
-dec0 = kn.dec_deg(-24, 40, 46)  # target declination
-dra, ddec, con = 1.7 / np.sqrt(2), 1.7 / np.sqrt(2), 10 ** (-4.190)  # test companion!
+# dec0 = kn.dec_deg(-24, 40, 46)  # target declination
+# dra, ddec, con = 1.7 / np.sqrt(2), 1.7 / np.sqrt(2), 10 ** (-4.190)  # test companion!
 
 # Gaia18ajz:
 # dec0 = kn.dec_deg(-8, 13, 13)  # target declination
@@ -59,14 +59,12 @@ The first step is to create a default instance of the Nuller class.
 )
 
 
-if burst_mode is False:
-    _ = input("Press key to continue..")
-
 myk = kn.Nuller(wavel=wavel)  # default nuller is a 4T -> 3 output nuller
 print(myk)  # tells you everything about the setup
 
 myk.plot_projected_array_tracks()
-plt.show()
+if burst_mode is False:
+    plt.show()
 
 print(
     """
@@ -75,13 +73,13 @@ For the next step, we update the pointing and the width of the observing
 window and can see how it affects the projected array tracks.
 ======================================================================== """
 )
-if burst_mode is False:
-    _ = input("Press key to continue..")
 
 myk.update_observation(tdec=dec0)  # change the pointing
 print(myk)
 myk.plot_projected_array_tracks()
-plt.show()
+
+if burst_mode is False:
+    plt.show()
 
 print(
     """
@@ -93,9 +91,6 @@ For this it needs to uppdate the type of combiner -> kernel
 Then it can do a plot of the theoretical kernel signal.
 ======================================================================== """
 )
-if burst_mode is False:
-    _ = input("Press key to continue..")
-
 
 # update the conditions of the observation sequence!
 myk.update_observation(hawidth=4, npoints=npoints, combiner="kernel")
@@ -103,7 +98,9 @@ print(myk)  # check that things are the way you want them
 
 # you can direclty generate a plot
 myk.plot_theoretical_signal_companion(dra=dra, ddec=ddec, con=con)
-plt.show()
+
+if burst_mode is False:
+    plt.show()
 
 print(
     """
@@ -112,14 +109,13 @@ The next part will compute complete response of the nuller over the fov
 and export them as a fits file that you can open with a tool like DS9
 ======================================================================== """
 )
-if burst_mode is False:
-    _ = input("Press key to continue..")
-
 nmaps = myk.compute_ideal_output_maps()
 
 # you can plot the 6 maps for one epoch (here at transit)
 myk.plot_ideal_output_maps(nmaps[:, tindex], figsize=4, cmap=mycmap)
-plt.show()
+
+if burst_mode is False:
+    plt.show()
 
 # and save the whole sequence as a fits file
 myk.export_ideal_output_maps_as_fits("output_maps.fits")
@@ -134,13 +130,13 @@ The next part of the code will compute and display the overall throughput
 map for this observation & identify possible "blind spots"
 ======================================================================== """
 )
-if burst_mode is False:
-    _ = input("Press key to continue..")
 
 gmap = nmaps.sum(axis=0).mean(axis=0)  # sum the channels, average the epochs
 myk.plot_fov_map(gmap, ftitle="Global nuller throughput map", cmap=mycmap, cbar=True)
 
-plt.show()
+
+if burst_mode is False:
+    plt.show()
 
 print(
     f"""
@@ -156,8 +152,6 @@ Here, we use a simulated test_binary located at:
 - contrast  = {con}
 ======================================================================== """
 )
-if burst_mode is False:
-    _ = input("Press key to continue..")
 
 # compute the signal of a binary companion (RA, dec, contrast)
 test_binary = myk.theoretical_signal_companion(dra=dra, ddec=ddec, con=con)
@@ -166,7 +160,9 @@ test_binary = myk.theoretical_signal_companion(dra=dra, ddec=ddec, con=con)
 cmap = myk.colinearity_map(nmaps, test_binary)
 myk.plot_fov_map(cmap, ftitle="Raw output Colinearity map ", cmap=mycmap, cbar=True)
 
-plt.show()
+
+if burst_mode is False:
+    plt.show()
 
 print(
     f"""
@@ -185,8 +181,6 @@ signal of the binary to the min() of the distribution for all h.a. ...
 which is just to do something, but is not that interesting.
 ======================================================================== """
 )
-if burst_mode is False:
-    _ = input("Press key to continue..")
 
 signal = myk.mc_perturbed_signal_companion(
     dra=dra, ddec=ddec, con=con, rms=prms, nmc=10000
@@ -202,7 +196,9 @@ plt.gca().set_prop_cycle(None)  # reset color cycle
 for ii in range(6):
     plt.plot(myk.har * 12 / np.pi, signalmean[ii], "--")
 
-plt.show()
+
+if burst_mode is False:
+    plt.show()
 print(
     """
 ========================================================================
@@ -216,9 +212,6 @@ Given how the kernels are distributed, it is much easier to get a sense
 for the SNR.
 ======================================================================== """
 )
-if burst_mode is False:
-    _ = input("Press key to continue..")
-
 
 kernel = myk.kernel_signal(signal)
 
@@ -226,7 +219,9 @@ myk.plot_experimental_kernel(
     signal, title="Kernel of experimental output for %d rms piston residuals" % (prms,)
 )
 
-plt.show()
+
+if burst_mode is False:
+    plt.show()
 print(
     """
 ========================================================================
