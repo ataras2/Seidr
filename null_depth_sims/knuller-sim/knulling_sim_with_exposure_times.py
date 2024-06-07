@@ -40,8 +40,15 @@ system_throughput = 0.039
 
 
 read_noise = 0.5  # e-
+spectral_R = 50
+del_lambda = wavelength / spectral_R
+n_pixels_per_null = np.ceil(bandwidth / del_lambda)
+frame_int_time = 0.1  # seconds
+print(f"n_pixels_per_null: {n_pixels_per_null}")
 QE = 0.8
 int_time = 3600 * 1  # 3600 # seconds
+
+n_frames = int(int_time / frame_int_time)
 
 # default companion parameters:
 # dec0 = kn.dec_deg(-64, 42, 45)  # target declination
@@ -76,6 +83,9 @@ kernel_index = 0
 average_null_depth = np.mean(on_axis[nuller_output_index, hr_index, :])
 print(f"Average null depth: {average_null_depth:.3e}")
 
+read_noise_tot = read_noise * np.sqrt(n_pixels_per_null) * np.sqrt(n_frames)
+print(f"Read noise total: {read_noise_tot:.3e}")
+
 star_photons_per_scope = (
     star_flux * system_throughput * telescope_area * bandwidth * int_time * QE
 )
@@ -83,11 +93,13 @@ star_photons_per_scope = (
 # test_binary is the signal from the companion, in units of "fraction of telescope flux"
 # TODO check this is right
 companion_photons = star_photons_per_scope * test_binary
-raw_comp_snr = companion_photons / np.sqrt(star_photons_per_scope * 2)
+raw_comp_snr = companion_photons / np.sqrt(
+    star_photons_per_scope * 2 + read_noise_tot**2
+)
 
 
 nulled_comp_snr = companion_photons / np.sqrt(
-    star_photons_per_scope * 2 * average_null_depth
+    star_photons_per_scope * 2 * average_null_depth + read_noise_tot**2
 )
 
 plt.figure(figsize=(12, 6))
@@ -109,8 +121,7 @@ plt.xlabel("Hour angle index")
 plt.figure()
 fig, ax = plt.subplots()
 for ii in range(test_binary.shape[0]):
-    ax.plot(
-        myk.har * 12/np.pi, test_binary[ii], label="output #%d" % (ii+1,))
+    ax.plot(myk.har * 12 / np.pi, test_binary[ii], label="output #%d" % (ii + 1,))
 ax.legend()
 ax.set_xlabel("Hour angle")
 ax.set_ylabel("Nuller output (fraction of telescope flux)")
