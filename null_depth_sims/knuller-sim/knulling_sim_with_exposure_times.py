@@ -17,6 +17,18 @@ prms = 100  # rms of piston residuals
 wavel = 1.6e-6  # wavelength
 
 
+# Tau Boötis b:
+dec0 = kn.dec_deg(17, 27, 24.810)  # target declination
+dra, ddec, con = 3 / np.sqrt(2), 3 / np.sqrt(2), 10 ** (-3.632)  # test companion!
+magnitude = 3.55  # 22
+# magnitude = 12 #Pa beta
+
+# Gaia18ajz:
+dec0 = kn.dec_deg(-8, 13, 12.756)  # target declination
+dra, ddec, con = 3 / np.sqrt(2), 3 / np.sqrt(2), 10 ** (-2.63)  # test companion!
+magnitude = 12.81
+
+
 # suppose UTs
 telescope_diameter = 8.2  # meters
 secondary_diameter = 1.2  # meters
@@ -24,8 +36,6 @@ telescope_area = np.pi * (
     (telescope_diameter / 2) ** 2 - (secondary_diameter / 2) ** 2
 )  # m^2
 n_telescopes = 4
-magnitude = 3.55  # 22
-# magnitude = 12 #Pa beta
 
 # Rule of thumb: 0 mag at H = 1e10 ph/um/s/m^2
 # e.g. An H=5 object gives 1 ph/cm^2/s/A
@@ -55,11 +65,6 @@ n_frames = int(int_time / frame_int_time)
 # dra, ddec, con = 5, 5, 1e-3  # test companion!
 # prms = 50  # rms of piston residuals
 # wavel = 3.6e-6  # wavelength
-
-
-# Tau Boötis b:
-dec0 = kn.dec_deg(17, 27, 24.810)  # target declination
-dra, ddec, con = 3 / np.sqrt(2), 3 / np.sqrt(2), 10 ** (-3.632)  # test companion!
 
 
 myk = kn.Nuller(wavel=wavel)  # default nuller is a 4T -> 3 output nuller
