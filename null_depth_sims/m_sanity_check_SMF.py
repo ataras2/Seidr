@@ -43,7 +43,7 @@ lf = lanternfiber.lanternfiber(
 )
 
 lf.find_fiber_modes()
-lf.make_fiber_modes(npix=n_pix // 2, show_plots=True, max_r=max_r)
+# lf.make_fiber_modes(npix=n_pix // 2, show_plots=True, max_r=max_r)
 
 
 # Wavefront properties
@@ -131,20 +131,57 @@ def compute_overlap_int(f_number):
     )[0]
 
 
-wf = prop_fibre_input_field(optics, input_f_number)
-plot_output_wf(wf)
-plt.pause(0.1)
+# r_vals = [2, 2.5, 3, 4, 5]
+r_vals = np.linspace(2, 4.5, 10)
 
-f_numbers = np.linspace(3.1, 5.2, 50)
-overlaps = jax.vmap(compute_overlap_int)(f_numbers)
 
-print(
-    f"Max overlap: {overlaps.max()} occurs at f_number: {f_numbers[overlaps.argmax()]:.2f} +/- {(f_numbers[1] - f_numbers[0])/2:.2f}"
-)
+for n_pix in 2 ** np.array([7, 8, 9]):
+    f_maxes = []
+    overlap_maxes = []
+    has_plotted = False
+    for max_r in r_vals:
+        lf.make_fiber_modes(npix=n_pix // 2, show_plots=False, max_r=max_r)
+        optics = optics.set("psf_npixels", n_pix)
+        optics = optics.set("psf_pixel_scale", max_r * core_diameter / n_pix)
 
-plt.figure()
-plt.plot(f_numbers, overlaps)
-plt.xlabel("f number")
-plt.ylabel("Coupling efficiency")
+        wf = prop_fibre_input_field(optics, input_f_number)
+
+        if not has_plotted:
+            lf.plot_fiber_modes(0, fignum=50)
+
+            plot_output_wf(wf)
+            plt.pause(0.1)
+
+            has_plotted = True
+
+        # f_numbers = np.linspace(3.1, 5.2, 50)
+        # overlaps = jax.vmap(compute_overlap_int)(f_numbers)
+
+        import scipy.optimize
+
+        res = scipy.optimize.minimize(
+            lambda x: -compute_overlap_int(x), 4.0, method="COBYLA"
+        )
+
+        f_maxes.append(res.x)
+        overlap_maxes.append(-res.fun)
+
+    plt.figure(100)
+    plt.subplot(121)
+    plt.plot(r_vals, f_maxes, "x", label=f"n_pix = {n_pix}")
+    plt.xlabel("max_r (units of core)")
+    plt.ylabel("optimal f number")
+
+    plt.subplot(122)
+    plt.plot(r_vals, overlap_maxes)
+    plt.xlabel("max_r (units of core)")
+    plt.ylabel("optimal injection value")
+
+
+# plt.figure()
+# plt.plot(f_numbers, overlaps)
+# plt.xlabel("f number")
+# plt.ylabel("Coupling efficiency")
+plt.legend()
 
 plt.show()
