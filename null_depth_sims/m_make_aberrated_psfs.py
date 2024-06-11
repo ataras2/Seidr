@@ -18,24 +18,26 @@ plt.rcParams["font.family"] = "serif"
 plt.rcParams["image.origin"] = "lower"
 plt.rcParams["figure.dpi"] = 72
 
-fname = "./aberrated_psfs_many_zern.npz"
+fname = "./aberrated_psfs_many_zern_MMF_5.npz"
 
 
 # Wavefront properties
 diameter = 1.8
-wf_npixels = 256
+wf_npixels = 512
 
 # simulation params
 n_runs = 1_000
-wavelength = 1.65e-6
+wavelength = 1.63e-6
 
 # psf params
 # input_f_number = 1.25
-input_f_number = 12.5
+input_f_number = 4.5
 # input_f_number = 3
 focal_length = input_f_number * diameter
-psf_npixels = 256
-psf_pixel_scale = 2 * 2 * 22.5 / psf_npixels
+psf_npixels = 512
+core_diameter = 15.9  # microns
+max_r = 6
+psf_pixel_scale = max_r * core_diameter / psf_npixels
 
 
 # aberration params:
@@ -46,9 +48,9 @@ psf_pixel_scale = 2 * 2 * 22.5 / psf_npixels
 
 n_zernikes = 100  # including piston
 tip_tilt_rms = (
-    50e-9 / 4 / np.sqrt(2)
+    200e-9 / 4 / np.sqrt(2)
 )  # /4 because of dlux things, /sqrt(2) to acocunt for both tip/tilt
-rest_rms = 5e-9 / 4
+rest_rms = 20e-9 / 4
 
 
 coords = dlu.pixel_coords(wf_npixels, diameter)

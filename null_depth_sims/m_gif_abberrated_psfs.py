@@ -8,12 +8,13 @@ import copy
 
 import matplotlib.pyplot as plt
 
-fname = "aberrated_psfs_many_zern"
+fname = "aberrated_psfs_many_zern_MMF"
 data = np.load(fname + ".npz")
 
 wavefronts = data["outputs"]
 non_aberrated = data["non_aberrated"]
 
+max_r = 6
 n_frames = 100
 
 Figure = plt.figure(figsize=(8, 4))
@@ -22,7 +23,7 @@ Figure = plt.figure(figsize=(8, 4))
 # add circle to show the PL input
 circle = plt.Circle(
     (non_aberrated.shape[0] // 2, non_aberrated.shape[1] // 2),
-    data["psf_npixels"] // 4,
+    data["psf_npixels"] // (max_r * 2),
     fill=False,
     linestyle="--",
     color="w",

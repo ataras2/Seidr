@@ -28,7 +28,9 @@ def read_data(path, validate_lf=None, max_r=None):
     return data
 
 
-pth = "./aberrated_psfs_many_zern.npz"
+# fname = "aberrated_psfs_many_zern_SMF"
+fname = "aberrated_psfs_many_zern_MMF_5"
+pth = f"./{fname}.npz"
 
 
 # PL params
@@ -36,9 +38,9 @@ n_core = 1.44
 n_cladding = 1.4345
 # n_core = 1.44
 # n_cladding = n_core - 0.04
-wavelength = 1.65  # microns
-core_radius = 22.5  # microns
-max_r = 2
+wavelength = 1.63  # microns
+core_radius = 15.9 / 2  # microns
+max_r = 6
 
 
 lf = lanternfiber.lanternfiber(
@@ -46,27 +48,18 @@ lf = lanternfiber.lanternfiber(
     n_cladding=n_cladding,
     core_radius=core_radius,
     wavelength=wavelength,
-    # nmodes=n_modes,
 )
+lf.find_fiber_modes()
 
 data = read_data(pth, lf, max_r)
-
-
-lf.find_fiber_modes()
 lf.make_fiber_modes(npix=data["psf_npixels"] // 2, show_plots=False, max_r=max_r)
+
 
 wavefronts = data["outputs"]
 
-wavefronts = (
-    wavefronts / (np.abs(wavefronts) ** 2).sum(axis=(1, 2), keepdims=True) ** 0.5
-)
 
 wf = wavefronts[0]
 wf = data["non_aberrated"]
-
-non_aberrated = (
-    data["non_aberrated"] / (np.abs(data["non_aberrated"]) ** 2).sum() ** 0.5
-)
 
 
 def get_total_injection(wf, lf):
@@ -74,10 +67,11 @@ def get_total_injection(wf, lf):
         input_field=wf,
         mode_field_numbers=list(range(len(lf.allmodefields_rsoftorder))),
         show_plots=False,
+        return_abspower=True,
     )[0]
 
 
-no_ab_inj = get_total_injection(non_aberrated, lf)
+no_ab_inj = get_total_injection(wf, lf)
 
 injection_vals = jax.vmap(get_total_injection, in_axes=(0, None))(wavefronts, lf)
 
@@ -102,7 +96,7 @@ def get_injections(wf, lf):
     )[1]
 
 
-no_ab_injs = get_injections(non_aberrated, lf)
+no_ab_injs = get_injections(wf, lf)
 injections = jax.vmap(get_injections, in_axes=(0, None))(wavefronts, lf)
 
 
@@ -118,7 +112,7 @@ def summary_stats(injs):
 
 
 plt.figure()
-first_n_modes_vals = [1, 3, 5]
+first_n_modes_vals = [1,3,5]
 for i, n in enumerate(first_n_modes_vals):
     injs = injections[:, :n].sum(axis=1)
     plt.hist(
@@ -131,29 +125,33 @@ for i, n in enumerate(first_n_modes_vals):
 
     table.add_row([f"{1}-{n}", *summary_stats(injs), no_ab_injs[:n].sum()])
 
-i += 1
-central_with_tip_tilt = np.array([0, 3, 4])
-injs = injections[:, central_with_tip_tilt].sum(axis=1)
-plt.hist(
-    injs,
-    alpha=0.5,
-    color=f"C{i}",
-    label=f"Modes {central_with_tip_tilt}",
-)
-plt.axvline(no_ab_injs[central_with_tip_tilt].sum(), c=f"C{i}", linestyle="--")
+# i += 1
+# central_with_tip_tilt = np.array([0, 3, 4])
+# injs = injections[:, central_with_tip_tilt].sum(axis=1)
+# plt.hist(
+#     injs,
+#     alpha=0.5,
+#     color=f"C{i}",
+#     label=f"Modes {central_with_tip_tilt}",
+# )
+# plt.axvline(no_ab_injs[central_with_tip_tilt].sum(), c=f"C{i}", linestyle="--")
 
-table.add_row(
-    [
-        f"{central_with_tip_tilt}",
-        *summary_stats(injs),
-        no_ab_injs[central_with_tip_tilt].sum(),
-    ]
-)
+# table.add_row(
+#     [
+#         f"{central_with_tip_tilt}",
+#         *summary_stats(injs),
+#         no_ab_injs[central_with_tip_tilt].sum(),
+#     ]
+# )
 
 plt.legend()
-plt.xlabel("Injection efficiency")
+plt.xlim([0.6, 0.95])
+plt.xlabel("Injection efficiency (telescope transmission)")
 plt.ylabel("Number of simulations")
 
 print(table)
+
+plt.savefig(f"{fname}.svg")
+plt.savefig(f"{fname}.pdf")
 
 plt.show()

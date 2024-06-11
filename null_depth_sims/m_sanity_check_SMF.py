@@ -144,15 +144,7 @@ for n_pix in 2 ** np.array([7, 8, 9]):
         optics = optics.set("psf_npixels", n_pix)
         optics = optics.set("psf_pixel_scale", max_r * core_diameter / n_pix)
 
-        wf = prop_fibre_input_field(optics, input_f_number)
 
-        if not has_plotted:
-            lf.plot_fiber_modes(0, fignum=50)
-
-            plot_output_wf(wf)
-            plt.pause(0.1)
-
-            has_plotted = True
 
         # f_numbers = np.linspace(3.1, 5.2, 50)
         # overlaps = jax.vmap(compute_overlap_int)(f_numbers)
@@ -165,6 +157,16 @@ for n_pix in 2 ** np.array([7, 8, 9]):
 
         f_maxes.append(res.x)
         overlap_maxes.append(-res.fun)
+
+        
+        if not has_plotted:
+            wf = prop_fibre_input_field(optics, res.x)
+            lf.plot_fiber_modes(0, fignum=50)
+
+            plot_output_wf(wf)
+            plt.pause(0.1)
+
+            has_plotted = True
 
     plt.figure(100)
     plt.subplot(121)
