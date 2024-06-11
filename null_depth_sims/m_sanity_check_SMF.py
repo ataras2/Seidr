@@ -22,12 +22,14 @@ plt.rcParams["figure.dpi"] = 72
 import dLux as dl
 import dLux.utils as dlu
 
-wavel = 1.63  # microns
+# wavel = 1.63  # microns
+wavel = 1.55  # microns
 
 n_pix = 256  # full width
 
 n_core = 1.44
-n_cladding = 1.4345
+# n_cladding = 1.4345
+n_cladding = (1 - 0.0036) * n_core
 
 max_r = 2
 
@@ -132,10 +134,10 @@ def compute_overlap_int(f_number):
 
 
 # r_vals = [2, 2.5, 3, 4, 5]
-r_vals = np.linspace(2, 4.5, 10)
+r_vals = np.linspace(2, 7, 10)
 
 
-for n_pix in 2 ** np.array([7, 8, 9]):
+for n_pix in 2 ** np.array([7, 9, 11]):
     f_maxes = []
     overlap_maxes = []
     has_plotted = False
@@ -146,7 +148,7 @@ for n_pix in 2 ** np.array([7, 8, 9]):
 
         wf = prop_fibre_input_field(optics, input_f_number)
 
-        if not has_plotted:
+        if not has_plotted and max_r == r_vals[-1]:
             lf.plot_fiber_modes(0, fignum=50)
 
             plot_output_wf(wf)
@@ -154,8 +156,11 @@ for n_pix in 2 ** np.array([7, 8, 9]):
 
             has_plotted = True
 
-        # f_numbers = np.linspace(3.1, 5.2, 50)
+        # f_numbers = np.linspace(4.0, 5.0, 100)
         # overlaps = jax.vmap(compute_overlap_int)(f_numbers)
+
+        # f_maxes.append(f_numbers[np.argmax(overlaps)])
+        # overlap_maxes.append(np.max(overlaps))
 
         import scipy.optimize
 
@@ -182,6 +187,7 @@ for n_pix in 2 ** np.array([7, 8, 9]):
 # plt.plot(f_numbers, overlaps)
 # plt.xlabel("f number")
 # plt.ylabel("Coupling efficiency")
+plt.subplot(121)
 plt.legend()
 
 plt.show()
