@@ -171,6 +171,16 @@ for n_pix in 2 ** np.array([7, 9, 11]):
         f_maxes.append(res.x)
         overlap_maxes.append(-res.fun)
 
+        
+        if not has_plotted:
+            wf = prop_fibre_input_field(optics, res.x)
+            lf.plot_fiber_modes(0, fignum=50)
+
+            plot_output_wf(wf)
+            plt.pause(0.1)
+
+            has_plotted = True
+
     plt.figure(100)
     plt.subplot(121)
     plt.plot(r_vals, f_maxes, "x", label=f"n_pix = {n_pix}")

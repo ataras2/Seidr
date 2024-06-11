@@ -9,6 +9,7 @@ dist
 
 *.png
 *.pdf
+*.svg
 
 *.ipynb
 *.npy

@@ -13,20 +13,25 @@ tindex = npoints // 2 + 1  # h.a. index @ transit
 mycmap = cm.inferno  # color map
 burst_mode = True  # script rhythm control
 
-prms = 100  # rms of piston residuals
+prms = 50  # rms of piston residuals
 wavel = 1.6e-6  # wavelength
 
 
 # Tau Boötis b:
-dec0 = kn.dec_deg(17, 27, 24.810)  # target declination
-dra, ddec, con = 3 / np.sqrt(2), 3 / np.sqrt(2), 10 ** (-3.632)  # test companion!
-magnitude = 3.55  # 22
+# dec0 = kn.dec_deg(17, 27, 24.810)  # target declination
+# dra, ddec, con = 3 / np.sqrt(2), 3 / np.sqrt(2), 10 ** (-3.632)  # test companion!
+# magnitude = 3.55  # 22
 # magnitude = 12 #Pa beta
 
+# TOI-431 c
+dec0 = kn.dec_deg(-26, 43, 26)  # target declination
+dra, ddec, con = 1.59 / np.sqrt(2), 1.59 / np.sqrt(2), 10 ** (-5.1)  # test companion!
+magnitude = 6.85  # 22
+
 # Gaia18ajz:
-dec0 = kn.dec_deg(-8, 13, 12.756)  # target declination
-dra, ddec, con = 3 / np.sqrt(2), 3 / np.sqrt(2), 10 ** (-2.63)  # test companion!
-magnitude = 12.81
+# dec0 = kn.dec_deg(-8, 13, 12.756)  # target declination
+# dra, ddec, con = 3 / np.sqrt(2), 3 / np.sqrt(2), 10 ** (-2.63)  # test companion!
+# magnitude = 12.81
 
 
 # suppose UTs
@@ -108,20 +113,21 @@ nulled_comp_snr = companion_photons / np.sqrt(
 )
 
 plt.figure(figsize=(12, 6))
-plt.subplot(1, 2, 1)
-plt.imshow(raw_comp_snr)
-plt.colorbar()
-plt.title("Raw SNR")
-plt.ylabel("Nulled output index")
-plt.xlabel("Hour angle index")
+# plt.subplot(1, 2, 1)
+# plt.imshow(raw_comp_snr)
+# plt.colorbar()
+# plt.title("Raw SNR")
+# plt.ylabel("Nulled output index")
+# plt.xlabel("Hour angle index")
 
-plt.subplot(1, 2, 2)
+# plt.subplot(1, 2, 2)
 plt.imshow(nulled_comp_snr)
 plt.colorbar()
 plt.title("Nulled SNR")
 plt.ylabel("Nulled output index")
 plt.xlabel("Hour angle index")
 
+print(f"Average SNR: {np.mean(raw_comp_snr):.3f} vs {np.mean(nulled_comp_snr):.3f}")
 
 plt.figure()
 fig, ax = plt.subplots()
