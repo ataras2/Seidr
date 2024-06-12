@@ -3,6 +3,7 @@ import jax.numpy as np
 import jax.random as jr
 
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 import lanternfiber
 import dLux as dl
@@ -21,7 +22,7 @@ class SeidrSim:
         max_r=6,
         wf_npixels=512,
         psf_npixels=512,
-        n_zernikes=5,
+        n_zernikes=100,
         f_number=4.5,
     ) -> None:
         """
@@ -54,11 +55,13 @@ class SeidrSim:
         self.core_diameter = core_diameter
         self.max_r = max_r
 
+        self.n_zernikes = n_zernikes
+
         self.lf = lanternfiber.lanternfiber(
             n_core=n_core,
             n_cladding=n_cladding,
             core_radius=core_diameter / 2,
-            wavel=wavel,
+            wavelength=wavel,
         )
         self.lf.find_fiber_modes()
 
@@ -124,7 +127,7 @@ class SeidrSim:
             self.optics = self.optics.set("aperture.coefficients", z_coeffs)
             return self.propagate_wf()
 
-        non_aberrated = self.propagate_wf(np.zeros(zernike_coeffs.shape[1]))
+        non_aberrated = set_zern_and_prop_wf(np.zeros(zernike_coeffs.shape[1]))
 
         wavefronts = jax.vmap(set_zern_and_prop_wf)(zernike_coeffs)
 
@@ -166,8 +169,44 @@ class SeidrSim:
 
             return amp_img, phase_img
 
-        from matplotlib.animation import FuncAnimation
-
         anim_created = FuncAnimation(Figure, animate, frames=n_frames)
 
         anim_created.save(fname + ".gif", fps=15)
+
+    @staticmethod
+    def make_default(type="smf"):
+        n_core = 1.44
+        n_cladding = 1.4345
+
+        if type == "smf":
+            core_diameter = 8.2
+        else:
+            raise NotImplementedError
+
+        return SeidrSim(
+            wavel=1.63,
+            n_core=n_core,
+            n_cladding=n_cladding,
+            core_diameter=core_diameter,
+        )
+
+
+if __name__ == "__main__":
+    sim = SeidrSim.make_default()
+    n_zernikes = sim.n_zernikes
+
+    n_runs = 100
+
+    tip_tilt_rms = 200e-9 / 4 / np.sqrt(2)
+    rest_rms = 20e-9 / 4
+
+    zernike_coeffs = np.concatenate(
+        [
+            np.zeros((n_runs, 1)),
+            tip_tilt_rms * jr.normal(jr.PRNGKey(1), (n_runs, 2)),
+            rest_rms * jr.normal(jr.PRNGKey(1), (n_runs, n_zernikes - 3)),
+        ],
+        axis=1,
+    )
+
+    sim.make_aberrations_gif(zernike_coeffs, "test")
