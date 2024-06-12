@@ -1,3 +1,4 @@
+import jax
 import jax.numpy as np
 import jax.random as jr
 
@@ -6,6 +7,8 @@ import matplotlib.pyplot as plt
 import lanternfiber
 import dLux as dl
 import dLux.utils as dlu
+
+import copy
 
 
 class SeidrSim:
@@ -111,3 +114,60 @@ class SeidrSim:
             show_plots=False,
             return_abspower=True,
         )[0:2]
+
+    def make_aberrations_gif(self, zernike_coeffs, fname):
+        n_frames = zernike_coeffs.shape[0]
+
+        Figure = plt.figure(figsize=(8, 4))
+
+        def set_zern_and_prop_wf(z_coeffs):
+            self.optics = self.optics.set("aperture.coefficients", z_coeffs)
+            return self.propagate_wf()
+
+        non_aberrated = self.propagate_wf(np.zeros(zernike_coeffs.shape[1]))
+
+        wavefronts = jax.vmap(set_zern_and_prop_wf)(zernike_coeffs)
+
+        # add circle to show the PL input
+        circle = plt.Circle(
+            (non_aberrated.shape[0] // 2, non_aberrated.shape[1] // 2),
+            self.optics.psf_npixels // (self.max_r * 2),
+            fill=False,
+            linestyle="--",
+            color="w",
+        )
+
+        plt.subplot(1, 2, 1)
+        amp_img = plt.imshow(np.abs(non_aberrated), cmap="inferno")
+        # mark centre with a little cross
+        plt.plot(
+            non_aberrated.shape[0] // 2, non_aberrated.shape[1] // 2, "+", color="r"
+        )
+        plt.colorbar()
+        plt.title("Amplitude")
+        plt.gca().add_artist(copy.copy(circle))
+
+        plt.subplot(1, 2, 2)
+        phase_img = plt.imshow(np.angle(non_aberrated), cmap="twilight")
+        plt.plot(
+            non_aberrated.shape[0] // 2, non_aberrated.shape[1] // 2, "+", color="r"
+        )
+        plt.colorbar()
+        plt.title("Phase")
+        plt.gca().add_artist(copy.copy(circle))
+
+        plt.savefig(fname + ".png")
+
+        def animate(
+            frame_idx,
+        ):
+            amp_img.set_data(np.abs(wavefronts[frame_idx]))
+            phase_img.set_data(np.angle(wavefronts[frame_idx]))
+
+            return amp_img, phase_img
+
+        from matplotlib.animation import FuncAnimation
+
+        anim_created = FuncAnimation(Figure, animate, frames=n_frames)
+
+        anim_created.save(fname + ".gif", fps=15)
