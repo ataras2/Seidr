@@ -64,6 +64,7 @@ class SeidrSim:
             wavelength=wavel,
         )
         self.lf.find_fiber_modes()
+        self.lf.make_fiber_modes(npix=psf_npixels // 2, show_plots=False, max_r=max_r)
 
         self._optics = self._make_optics(wf_npixels, psf_npixels, f_number, n_zernikes)
 
@@ -105,6 +106,11 @@ class SeidrSim:
 
         return ouput_wf_complex
 
+    def remove_aberrations(self):
+        self.optics = self.optics.set(
+            "aperture.coefficients", np.zeros(self.n_zernikes)
+        )
+
     def propagate_injections(self):
         """
         Given the current state of the system, propagate the wavefront and calculate the injection efficiency
@@ -130,6 +136,7 @@ class SeidrSim:
         non_aberrated = set_zern_and_prop_wf(np.zeros(zernike_coeffs.shape[1]))
 
         wavefronts = jax.vmap(set_zern_and_prop_wf)(zernike_coeffs)
+        self.remove_aberrations()
 
         # add circle to show the PL input
         circle = plt.Circle(
@@ -195,18 +202,22 @@ if __name__ == "__main__":
     sim = SeidrSim.make_default()
     n_zernikes = sim.n_zernikes
 
-    n_runs = 100
+    sim.remove_aberrations()
 
-    tip_tilt_rms = 200e-9 / 4 / np.sqrt(2)
-    rest_rms = 20e-9 / 4
+    print(sim.propagate_injections())
 
-    zernike_coeffs = np.concatenate(
-        [
-            np.zeros((n_runs, 1)),
-            tip_tilt_rms * jr.normal(jr.PRNGKey(1), (n_runs, 2)),
-            rest_rms * jr.normal(jr.PRNGKey(1), (n_runs, n_zernikes - 3)),
-        ],
-        axis=1,
-    )
+    # n_runs = 100
 
-    sim.make_aberrations_gif(zernike_coeffs, "test")
+    # tip_tilt_rms = 200e-9 / 4 / np.sqrt(2)
+    # rest_rms = 20e-9 / 4
+
+    # zernike_coeffs = np.concatenate(
+    #     [
+    #         np.zeros((n_runs, 1)),
+    #         tip_tilt_rms * jr.normal(jr.PRNGKey(1), (n_runs, 2)),
+    #         rest_rms * jr.normal(jr.PRNGKey(1), (n_runs, n_zernikes - 3)),
+    #     ],
+    #     axis=1,
+    # )
+
+    # sim.make_aberrations_gif(zernike_coeffs, "test")
