@@ -78,6 +78,9 @@ myk.update_observation(hawidth=4, npoints=npoints, combiner="kernel")
 test_binary = myk.theoretical_signal_companion(dra=dra, ddec=ddec, con=con)
 print(test_binary.shape)
 
+myk.plot_projected_array_tracks()
+# plt.show()
+
 total_signal, on_axis, off_axis = myk.mc_perturbed_signal_companion(
     dra=dra, ddec=ddec, con=con, rms=prms, nmc=10000, return_split=True
 )
@@ -142,31 +145,27 @@ ax.set_title(mytitle)
 fig.set_tight_layout(True)
 
 
-plt.show()
-
-exit()
-
 kernel = myk.kernel_signal(total_signal)
 true_kernel = myk.kernel_signal(test_binary)
 
 print(kernel.shape, true_kernel.shape)
 
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(5, 2.5))
 # plot histograms
-plt.hist(on_axis[nuller_output_index, hr_index, :], bins=50, alpha=0.5, label="on-axis")
-plt.hist(
-    off_axis[nuller_output_index, hr_index, :], bins=50, alpha=0.5, label="off-axis"
-)
 plt.hist(
     total_signal[nuller_output_index, hr_index, :],
     bins=50,
     alpha=0.5,
     label="total signal",
 )
-plt.axvline(
-    test_binary[nuller_output_index, hr_index], color="red", label="true binary signal"
-)
-plt.legend()
+plt.xlim(-0.01, 0.08)
+plt.xlabel("Null depth (fraction of telescope flux)")
+plt.ylabel("Number of simulations")
+plt.title(f"Null depth distribution at piston rms {prms} nm")
+# plt.axvline(
+#     test_binary[nuller_output_index, hr_index], color="red", label="true binary signal"
+# )
+# plt.legend()
 
 
 plt.figure(figsize=(12, 6))

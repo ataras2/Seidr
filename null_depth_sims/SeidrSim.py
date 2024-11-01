@@ -111,7 +111,7 @@ class SeidrSim:
             "aperture.coefficients", np.zeros(self.n_zernikes)
         )
 
-    def propagate_injections(self):
+    def propagate_injections(self, is_complex=False):
         """
         Given the current state of the system, propagate the wavefront and calculate the injection efficiency
         """
@@ -122,6 +122,7 @@ class SeidrSim:
             mode_field_numbers=list(range(len(self.lf.allmodefields_rsoftorder))),
             show_plots=False,
             return_abspower=True,
+            complex=is_complex,
         )[0:2]
 
     def make_aberrations_gif(self, zernike_coeffs, fname):
@@ -181,20 +182,23 @@ class SeidrSim:
         anim_created.save(fname + ".gif", fps=15)
 
     @staticmethod
-    def make_default(type="smf"):
+    def make_default(type="smf", **kwargs):
         n_core = 1.44
         n_cladding = 1.4345
 
         if type == "smf":
             core_diameter = 8.2
+        elif type == "mmf5":
+            core_diameter = 15.9
         else:
-            raise NotImplementedError
+            raise NotImplementedError()
 
         return SeidrSim(
             wavel=1.63,
             n_core=n_core,
             n_cladding=n_cladding,
             core_diameter=core_diameter,
+            **kwargs
         )
 
 

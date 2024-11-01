@@ -663,7 +663,7 @@ class Nuller():
             self._dress_datamap_ax(ax, dmap, ftitle=ftitle, cmap=cmap)
 
         else:
-            fsize = np.array([1, 0.2]) * figsize
+            fsize = np.array([1, 0.1]) * figsize
             fig, axes = plt.subplots(
                 1, 2, gridspec_kw={'width_ratios': fsize.tolist()})
             fig.set_size_inches(fsize.sum(), figsize, forward=True)
