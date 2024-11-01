@@ -6,6 +6,8 @@ import jax
 import jax.numpy as np
 import jax.random as jr
 import numpy as onp
+from prettytable import PrettyTable
+
 
 import lanternfiber
 
@@ -29,7 +31,7 @@ def read_data(path, validate_lf=None, max_r=None):
 
 
 # fname = "aberrated_psfs_many_zern_SMF"
-fname = "aberrated_psfs_many_zern_MMF_5"
+fname = "example_psfs"
 pth = f"./{fname}.npz"
 
 
@@ -100,8 +102,6 @@ no_ab_injs = get_injections(wf, lf)
 injections = jax.vmap(get_injections, in_axes=(0, None))(wavefronts, lf)
 
 
-from prettytable import PrettyTable
-
 table = PrettyTable()
 
 table.field_names = ["Modes", "5th", "50th", "95th", "no ab"]
@@ -112,7 +112,7 @@ def summary_stats(injs):
 
 
 plt.figure()
-first_n_modes_vals = [1,3,5]
+first_n_modes_vals = [1, 3, 5]
 for i, n in enumerate(first_n_modes_vals):
     injs = injections[:, :n].sum(axis=1)
     plt.hist(

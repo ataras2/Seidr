@@ -18,7 +18,7 @@ plt.rcParams["font.family"] = "serif"
 plt.rcParams["image.origin"] = "lower"
 plt.rcParams["figure.dpi"] = 72
 
-fname = "./aberrated_psfs_many_zern_MMF_5.npz"
+fname = "./example_psfs.npz"
 
 
 # Wavefront properties
