@@ -2,7 +2,7 @@ import jax.numpy as np
 import jax.random as jr
 
 
-class CorrelatedAberrations:
+class CorrelatedNoise:
     """
     A class that can be used to generate correlated aberrations
     """
@@ -26,7 +26,7 @@ class CorrelatedAberrations:
         noise = jr.normal(subkey, (1, len(self.rms_amplitudes))) * self.rms_amplitudes
 
         rs = np.exp(-del_ts / self.correlation_time)
-        tilde_sigs = np.sqrt(1 - rs**2)[:,None] * self.rms_amplitudes[None, :]
+        tilde_sigs = np.sqrt(1 - rs**2)[:, None] * self.rms_amplitudes[None, :]
         for i in range(1, len(sample_times)):
 
             key, subkey = jr.split(key)
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     plt.plot(sample_times, noise)
 
-    ca_long = CorrelatedAberrations(200e-3, np.array([1, 2, 3]) * 100 * 1e-9)
+    ca_long = CorrelatedNoise(200e-3, np.array([1, 2, 3]) * 100 * 1e-9)
 
     noise_long = ca_long.sample(sample_times)
 
